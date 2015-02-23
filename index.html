@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<title>Population of Nepal</title>
+<style>
+path {
+  stroke: white;
+  stroke-width: 0.25px;
+  fill: #bcd;
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: left;           
+  width: 400px;                  
+  height: 90px;                 
+  padding: 5px;             
+  font: 24px sans-serif;        
+  background: #ffffff;   
+  border: 2px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v0.min.js"></script>
+<script>
+var width = 1200,
+    height = 1200;
+
+var projection = d3.geo.albers()
+    .center([23.5, 29.0])
+	.scale(7000)
+    .rotate([-60,0.1])
+    .parallels([27, 32]);
+
+var svg = d3.select("#map").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+	
+var tooltip = d3.select("#map").append("div")
+    .attr("class", "tooltip");
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var g = svg.append("g");
+
+var quantize = d3.scale.linear()
+    .domain([-7,-1,0,1,5])
+    .range(["#ffffff","#c6e2fc","#72b4ef","#348ad8","#094780"]);
+	
+var div = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style("opacity", 0);
+
+
+// load and display the World
+d3.json("nepalTopo.json", function(error, topology) {
+    g.selectAll("path")
+    .data(topojson.object(topology, topology.objects.nepal_districts)
+          .geometries)
+    .enter()
+      .append("path")
+	  .attr("d", path)
+      .style("fill", function(d) {return quantize(+d.properties.gr);})
+	   .on("mouseover", function(d) {   
+            div.transition()        
+                .duration(200)      
+                .style("opacity", 0.7);      
+            div .html("<b>"+d.properties.name+"</b>" + "<br/>"  + "<b>"+"Population: "+ "</b>"+ d.properties.popn + "<br/>" + "<b>"+"Growth Rate: " + "</b>"+  d.properties.gr)  
+                .style("left", "780px")     
+                .style("top", "150px");   
+				//.style("left", (d3.event.pageX) + "px")     
+                //.style("top", (d3.event.pageY - 28) + "px");    
+            })                  
+        .on("mouseout", function(d) {       
+            div.transition()        
+                .duration(500)      
+                .style("opacity", 0);   
+        })
+
+	
+});
+
+
+
+//zoom and pan
+ var zoom = d3.behavior.zoom()
+    .on("zoom",function() {
+        g.attr("transform","translate("+ 
+            d3.event.translate.join(",")+")scale("+d3.event.scale+")");
+        g.selectAll("path")  
+            .attr("d", path.projection(projection)); 
+  });
+
+svg.call(zoom)
+
+</script>
+</body>
+</html>
